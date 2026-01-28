@@ -76,6 +76,9 @@ Or, if you are in the repo:
 
 4. `cargo run --release -- is-ll1 < sebnf_of_sebnf.txt`
 
+Note: In case of LL(1) conflicts, the error messages are referencing the BNF
+that was derived from the SEBNF.
+
 ---
 
 ## AI Usage
