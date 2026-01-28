@@ -74,7 +74,7 @@ of the SEBNF CLI tool which is capable of:
 
 Or, if you are in the repo:
 
-4. `cargo run -- is-ll1 < sebnf_of_sebnf.txt`
+4. `cargo run --release -- is-ll1 < sebnf_of_sebnf.txt`
 
 ---
 
