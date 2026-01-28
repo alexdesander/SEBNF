@@ -91,4 +91,5 @@ LLMs were used to:
 - Fix typos in this README
 - Implement error reporting using `miette`
 - Test cases for regex_intersect
+- Implementing some bug fixes
 - Research
