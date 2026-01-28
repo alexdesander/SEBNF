@@ -1,0 +1,28 @@
+(*                 SEBNF of SEBNF                 *)
+(*  What you are reading right now is a comment.  *)
+(*  SEBNF stands for "Simpler EBNF".              *)
+(*  Whitespaces, newlines and comments ignored.   *)
+(*  Regex variant must be: Rust "regex" crate.    *)
+(*  The first rule is implied to be the start.    *)
+
+(*  IMPORTANT:
+        "|" (choice operator) is only allowed inside
+        () or at the start of a new rule right side.
+        Valid:   A := B | C { ("a" | "b") }.
+        Invalid: A := B | C { "a" | "b" }.
+ *)
+
+grammar      := { rule }.
+rule         := non_terminal ":=" alternatives ".".
+alternatives := { item } { "|" { item } }.
+item         := non_terminal
+              | terminal
+              | regex
+              | "[" { item } "]"
+              | "{" { item } "}"
+              | "(" { item } { "|" { item } } ")"
+              .
+non_terminal := /[0-9A-Za-z_]+/.
+terminal     := /"(?:[^"\\]|\\.)*"/.
+regex        := /\/(?:[^\/\\]|\\.)*?\//.
+_comment     := /\(\*[\s\S]*?\*\)/.
