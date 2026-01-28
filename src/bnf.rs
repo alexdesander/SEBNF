@@ -24,7 +24,10 @@ impl Bnf {
     }
 
     /// Checks if the grammar is LL(1) and returns detailed information
-    pub fn is_ll1(&self) -> Result<Ll1Result, Ll1Error> {
+    ///
+    /// If `ignore_regex_conflicts` is true, regex-vs-regex conflicts are skipped.
+    /// This is useful when the lexer uses a priority system to resolve such conflicts.
+    pub fn is_ll1(&self, ignore_regex_conflicts: bool) -> Result<Ll1Result, Ll1Error> {
         let sets = self.first_and_follow_sets();
         let mut conflicts = Vec::new();
 
@@ -43,7 +46,7 @@ impl Bnf {
             // Check FIRST/FIRST conflicts between all pairs of productions
             for i in 0..productions.len() {
                 for j in (i + 1)..productions.len() {
-                    let item_conflicts = find_set_conflicts(&prod_firsts[i].0, &prod_firsts[j].0)?;
+                    let item_conflicts = find_set_conflicts(&prod_firsts[i].0, &prod_firsts[j].0, ignore_regex_conflicts)?;
 
                     if !item_conflicts.is_empty() {
                         conflicts.push(Ll1Conflict {
@@ -69,7 +72,7 @@ impl Bnf {
                     for j in 0..productions.len() {
                         if i != j {
                             let item_conflicts =
-                                find_set_conflicts(&prod_firsts[j].0, &follow_set)?;
+                                find_set_conflicts(&prod_firsts[j].0, &follow_set, ignore_regex_conflicts)?;
 
                             if !item_conflicts.is_empty() {
                                 conflicts.push(Ll1Conflict {

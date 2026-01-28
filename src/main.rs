@@ -33,7 +33,12 @@ enum Commands {
     /// Extract FIRST and FOLLOW sets
     ExtractSets,
     /// Check if grammar is LL(1)
-    IsLl1,
+    IsLl1 {
+        /// Skip regex-vs-regex conflict checking. Use this when your lexer
+        /// resolves regex conflicts via a priority system.
+        #[arg(long)]
+        ignore_regex_conflicts: bool,
+    },
 }
 
 fn read_stdin() -> String {
@@ -98,10 +103,10 @@ fn main() -> ExitCode {
             print!("{}", sets);
             Ok(ExitCode::SUCCESS)
         }
-        Commands::IsLl1 => {
+        Commands::IsLl1 { ignore_regex_conflicts } => {
             let sebnf = parse_sebnf(&input)?;
             let bnf = sebnf.to_bnf();
-            let result = bnf.is_ll1()?;
+            let result = bnf.is_ll1(ignore_regex_conflicts)?;
             print!("{}", result);
             if result.is_ll1() {
                 Ok(ExitCode::SUCCESS)

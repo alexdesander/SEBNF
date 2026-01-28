@@ -261,12 +261,13 @@ impl fmt::Display for SetItemConflict {
 pub fn find_set_conflicts(
     set1: &HashSet<SetItem>,
     set2: &HashSet<SetItem>,
+    ignore_regex_conflicts: bool,
 ) -> Result<Vec<SetItemConflict>, Ll1Error> {
     let mut conflicts = Vec::new();
 
     for item1 in set1 {
         for item2 in set2 {
-            if let Some(conflict) = check_item_conflict(item1, item2)? {
+            if let Some(conflict) = check_item_conflict(item1, item2, ignore_regex_conflicts)? {
                 conflicts.push(conflict);
             }
         }
@@ -278,6 +279,7 @@ pub fn find_set_conflicts(
 fn check_item_conflict(
     item1: &SetItem,
     item2: &SetItem,
+    ignore_regex_conflicts: bool,
 ) -> Result<Option<SetItemConflict>, Ll1Error> {
     match (item1, item2) {
         (SetItem::Terminal(t1), SetItem::Terminal(t2)) => {
@@ -293,6 +295,8 @@ fn check_item_conflict(
                 Ok(None)
             }
         }
+
+        (SetItem::Regex(_), SetItem::Regex(_)) if ignore_regex_conflicts => Ok(None),
 
         (SetItem::Regex(r1), SetItem::Regex(r2)) => {
             let p1 = strip_regex_delimiters(r1);

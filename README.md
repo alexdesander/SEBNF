@@ -76,6 +76,15 @@ Or, if you are in the repo:
 
 4. `cargo run --release -- is-ll1 < sebnf_of_sebnf.txt`
 
+### Ignoring Regex Conflicts
+
+Some lexers use a priority system to resolve conflicts between regex patterns.
+If your lexer handles this, you can skip regex-vs-regex conflict checking with:
+
+```
+./sebnf_tool is-ll1 --ignore-regex-conflicts < grammar.txt
+```
+
 Note: In case of LL(1) conflicts, the error messages are referencing the BNF
 that was derived from the SEBNF.
 
@@ -96,3 +105,4 @@ LLMs were used to:
 - Test cases for regex_intersect
 - Implementing some bug fixes
 - Research
+- Implement `--ignore-regex-conflicts` flag
