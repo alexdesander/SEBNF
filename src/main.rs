@@ -60,7 +60,9 @@ fn parse_sebnf(input: &str) -> Result<Sebnf, ParseError> {
         }
     };
 
-    Sebnf::parse(tokens, input.to_string(), "<stdin>")
+    let sebnf = Sebnf::parse(tokens, input.to_string(), "<stdin>")?;
+    sebnf.validate(input.to_string(), "<stdin>")?;
+    Ok(sebnf)
 }
 
 #[derive(Debug, thiserror::Error, miette::Diagnostic)]

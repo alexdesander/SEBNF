@@ -59,7 +59,7 @@ impl ConverterContext {
 
     fn convert_item(&mut self, item: &sebnf::Item) -> bnf::Item {
         match item {
-            sebnf::Item::NonTerminal(s) => bnf::Item::NonTerminal(s.clone()),
+            sebnf::Item::NonTerminal(s, _) => bnf::Item::NonTerminal(s.clone()),
             sebnf::Item::Terminal(s) => bnf::Item::Terminal(s.clone()),
             sebnf::Item::Regex(s) => bnf::Item::Regex(s.clone()),
 

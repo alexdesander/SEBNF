@@ -59,6 +59,19 @@ pub enum ParseError {
         #[label("unrecognized token")]
         span: SourceSpan,
     },
+
+    #[error("undefined non-terminal '{name}'")]
+    #[diagnostic(
+        code(sebnf::undefined_nonterminal),
+        help("add a rule for '{name}' or fix the reference")
+    )]
+    UndefinedNonTerminal {
+        name: String,
+        #[source_code]
+        src: NamedSource<String>,
+        #[label("'{name}' is referenced here but has no rule")]
+        span: SourceSpan,
+    },
 }
 
 #[derive(Debug)]
@@ -68,7 +81,7 @@ pub struct Sebnf {
 
 #[derive(Debug)]
 pub enum Item {
-    NonTerminal(String),
+    NonTerminal(String, Range<usize>),
     Terminal(String),
     Regex(String),
     Optional(Vec<Item>),
@@ -220,8 +233,8 @@ impl Parser {
 
         match tok {
             Token::NonTerminal(_) => {
-                if let Some((Token::NonTerminal(s), _)) = self.advance() {
-                    Ok(Some(Item::NonTerminal(s.clone())))
+                if let Some((Token::NonTerminal(s), span)) = self.advance() {
+                    Ok(Some(Item::NonTerminal(s.clone(), span.clone())))
                 } else {
                     unreachable!()
                 }
@@ -291,12 +304,55 @@ impl Sebnf {
     pub fn to_bnf(&self) -> Bnf {
         converter::sebnf_to_bnf(self)
     }
+
+    pub fn validate(&self, source: String, source_name: &str) -> Result<(), ParseError> {
+        let defined: std::collections::HashSet<&str> =
+            self.rules.keys().map(|s| s.as_str()).collect();
+
+        for alternatives in self.rules.values() {
+            for items in alternatives {
+                Self::check_items_defined(items, &defined, &source, source_name)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn check_items_defined(
+        items: &[Item],
+        defined: &std::collections::HashSet<&str>,
+        source: &str,
+        source_name: &str,
+    ) -> Result<(), ParseError> {
+        for item in items {
+            match item {
+                Item::NonTerminal(name, span) => {
+                    if !defined.contains(name.as_str()) {
+                        return Err(ParseError::UndefinedNonTerminal {
+                            name: name.clone(),
+                            src: NamedSource::new(source_name, source.to_string()),
+                            span: to_source_span(span),
+                        });
+                    }
+                }
+                Item::Optional(inner) | Item::AnyAmount(inner) => {
+                    Self::check_items_defined(inner, defined, source, source_name)?;
+                }
+                Item::Choice(alts) => {
+                    for alt in alts {
+                        Self::check_items_defined(alt, defined, source, source_name)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(())
+    }
 }
 
 impl fmt::Display for Item {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Item::NonTerminal(s) => write!(f, "{}", s),
+            Item::NonTerminal(s, _) => write!(f, "{}", s),
             Item::Terminal(s) => write!(f, "{}", s),
             Item::Regex(s) => write!(f, "{}", s),
             Item::Optional(items) => {
