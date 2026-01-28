@@ -311,22 +311,10 @@ fn check_item_conflict(
             }
         }
 
-        (SetItem::Regex(r), SetItem::Terminal(t)) | (SetItem::Terminal(t), SetItem::Regex(r)) => {
-            let pattern = strip_regex_delimiters(r);
-            let terminal = strip_terminal_quotes(t);
-            let escaped_terminal = regex_syntax::escape(terminal);
-            match do_regexs_intersect(pattern, &escaped_terminal) {
-                Ok(Some(witness)) => Ok(Some(SetItemConflict {
-                    item1: item1.clone(),
-                    item2: item2.clone(),
-                    witness: Some(witness),
-                })),
-                Ok(None) => Ok(None),
-                Err(e) => Err(Ll1Error::InvalidRegex {
-                    pattern: r.to_string(),
-                    source: e,
-                }),
-            }
+        // Hardcoded terminals (keywords) take precedence over regex patterns in lexing,
+        // so they cannot conflict
+        (SetItem::Regex(_), SetItem::Terminal(_)) | (SetItem::Terminal(_), SetItem::Regex(_)) => {
+            Ok(None)
         }
 
         (SetItem::Epsilon, SetItem::Epsilon) => Ok(Some(SetItemConflict {
