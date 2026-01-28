@@ -32,6 +32,20 @@ impl std::error::Error for Error {
     }
 }
 
+/// Check if a regex pattern can match the empty string.
+///
+/// Returns true if the pattern matches "", false otherwise.
+/// Returns false if the pattern is invalid.
+pub fn regex_matches_empty(pattern: &str) -> bool {
+    let Ok(dfa) = DFA::new(pattern) else {
+        return false;
+    };
+    let input = Input::new(&[] as &[u8]).anchored(Anchored::Yes);
+    let start = dfa.start_state_forward(&input).unwrap();
+    let eoi = dfa.next_eoi_state(start);
+    dfa.is_match_state(eoi)
+}
+
 /// Check if two regex patterns have a non-empty intersection.
 ///
 /// Returns Ok(Some(string)) with the smallest matching string if there exists
@@ -91,6 +105,34 @@ pub fn do_regexs_intersect(a: &str, b: &str) -> Result<Option<String>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_regex_matches_empty() {
+        // Patterns that match empty string
+        assert!(regex_matches_empty(""));
+        assert!(regex_matches_empty("a*"));
+        assert!(regex_matches_empty("a?"));
+        assert!(regex_matches_empty(".*"));
+        assert!(regex_matches_empty("(a|b)*"));
+        assert!(regex_matches_empty("a*b*"));
+        assert!(regex_matches_empty("(ab)?"));
+        assert!(regex_matches_empty("()"));
+        assert!(regex_matches_empty("()*"));
+
+        // Patterns that do NOT match empty string
+        assert!(!regex_matches_empty("a"));
+        assert!(!regex_matches_empty("a+"));
+        assert!(!regex_matches_empty("."));
+        assert!(!regex_matches_empty(".+"));
+        assert!(!regex_matches_empty("ab"));
+        assert!(!regex_matches_empty("[a-z]"));
+        assert!(!regex_matches_empty("[a-z]+"));
+        assert!(!regex_matches_empty("a{1,}"));
+        assert!(!regex_matches_empty("a{2,5}"));
+
+        // Invalid patterns return false
+        assert!(!regex_matches_empty("[invalid"));
+    }
 
     #[test]
     fn identical_patterns() {

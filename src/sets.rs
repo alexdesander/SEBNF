@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 use crate::bnf::*;
-use crate::regex_intersect::{Error as RegexError, do_regexs_intersect};
+use crate::regex_intersect::{Error as RegexError, do_regexs_intersect, regex_matches_empty};
 
 #[derive(Debug, Clone)]
 pub struct Sets {
@@ -184,10 +184,19 @@ pub fn first_of_sequence(
 
     for item in sequence {
         match item {
-            Item::Terminal(_) | Item::Regex(_) => {
+            Item::Terminal(_) => {
                 firsts.insert(SetItem::from(item));
                 nullable = false;
                 break;
+            }
+            Item::Regex(pattern) => {
+                firsts.insert(SetItem::from(item));
+                let pattern = strip_regex_delimiters(pattern);
+                if !regex_matches_empty(pattern) {
+                    nullable = false;
+                    break;
+                }
+                // Regex can match empty, continue to next item
             }
             Item::NonTerminal(nt) => {
                 let nt_firsts = first_sets.get(nt).cloned().unwrap_or_default();
